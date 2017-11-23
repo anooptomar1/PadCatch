@@ -23,8 +23,9 @@ class CameraConfig
         cameraNode.camera=scnCam
         sceneView.scene.rootNode.addChildNode(cameraNode)
         cameraNode.position = SCNVector3Make(0, 0, 0)
-        print("cameraNode position - \(cameraNode.position)")
-        print("cameraNode orientation - \(cameraNode.orientation)")
+        //print("cameraNode position - \(cameraNode.position)")
+        //print("cameraNode orientation - \(cameraNode.orientation)")
+        //print("actual camera orientation - \(sceneView.pointOfView?.orientation)")
         
 
     }
