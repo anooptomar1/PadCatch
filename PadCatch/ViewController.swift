@@ -32,10 +32,13 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
     let sessionConfiguration = ARWorldTrackingConfiguration()
     
     let gameStateInPlay:Bool = false
+    /// A type which manages gesture manipulation of virtual content in the scene.
+    //lazy var virtualObjectInteraction = VirtualObjectInteraction(sceneView: sceneView)
 
 
-    var sandArr = [VirtualObject]()
     var planes = [String: VirtualObject]()
+    var activeSandwich = [VirtualObject]()
+    
     // This node basically returns info about the camera
     let cameraConfig = CameraConfig()
     
@@ -60,7 +63,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
     override func viewDidLoad()
     {
         super.viewDidLoad()
-        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints] //, ARSCNDebugOptions.showWorldOrigin]
+        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints, ARSCNDebugOptions.showWorldOrigin]
         
         // Prevent the screen from being dimmed after a while.
         UIApplication.shared.isIdleTimerDisabled = true
@@ -92,21 +95,24 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
     
     func loadModel()
     {
-        let dir = calculateCameraDirection(cameraNode: cameraConfig.cameraNode)
-        let pos = pointInFrontOfPoint(point: SCNVector3Make(0, -0.15, 0), direction: dir, distance: 0.4)
-        let sandwichObj = VirtualObject(name: "sandwich")
-        sandwichObj.loadModel(withName:"marmalade_sandwich.scn" )
-        sandwichObj.position = pos
-        sandwichObj.orientation = cameraConfig.cameraNode.orientation
-        sceneView.pointOfView?.addChildNode(sandwichObj)
-
+        if(activeSandwich.count==0)
+        {
+            let dir = calculateCameraDirection(cameraNode: cameraConfig.cameraNode)
+            let pos = pointInFrontOfPoint(point: SCNVector3Make(0, -0.15, 0), direction: dir, distance: 0.4)
+            let sandwichObj = VirtualObject(name: "sandwich")
+            sandwichObj.loadModel(withName:"marmalade_sandwich.scn" )
+            sandwichObj.position = pos
+            sandwichObj.orientation = cameraConfig.cameraNode.orientation
+            //print("position is \(sandwichObj.position)")
+            sceneView.pointOfView?.addChildNode(sandwichObj)
+            //print("camera direction is \(dir)")
+            activeSandwich.append(sandwichObj)
+        }
     }
     //__Start a new game of Paddington Catch.
     func initGame ()
     {
         playButton.isHidden = true
-        //__Load all of the sandwiches. This should only be done once.
-        sandArr.removeAll()
         self.loadModel()
     }
     
@@ -133,7 +139,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
     func setupPhysics()
     {
         // Use a huge size to cover the entire world
-        let bottomPlane = SCNBox(width: 10000, height: 1.0, length: 10000, chamferRadius: 0)
+        let bottomPlane = SCNBox(width: 10000, height: 0.5, length: 10000, chamferRadius: 0)
         
         // Use a clear material so the body is not visible
         let material = SCNMaterial()
@@ -156,6 +162,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
 
     }
 
+    // MARK: Position Testing
+    
 
 
     @objc func handleSandwichTap(sender: UITapGestureRecognizer)
@@ -171,99 +179,87 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
             let node = hit.node
             if (node.name?.range(of:"sand") != nil)
             {
+                print("_tap_")
+                /*
                 print(hit.node.parent!.parent!.name!)
+                let vo = node.parent!.parent! as! VirtualObject
+                vo.setUpPhysics()
+                vo.physicsBody?.applyTorque(SCNVector4Make(0.5,0,0,0.5), asImpulse: true)
+                vo.physicsBody?.applyForce(SCNVector3Make(0,0.75,-0.85), asImpulse: true)
+                */
             }
         }
     }
     
     @objc func handleSandwichToss(sender: UIPanGestureRecognizer)
     {
-        let velocity = sender.velocity(in: sceneView)
         let translate = sender.translation(in: sceneView)
         let tapPoint:CGPoint
         var node:SCNNode = SCNNode()
-        var lastTranslate:CGPoint  = CGPoint(x:0.0, y:0.0)
-        var prevTranslate:CGPoint  = CGPoint(x:0.0, y:0.0)
-        var lastTime:TimeInterval = 0.0
-        var prevTime:TimeInterval = 0.0
         if(sender.state == UIGestureRecognizerState.began)
         {
+            print("gesture start..")
             tapPoint=sender.location(in: sceneView)
             guard let hit=sceneView.hitTest(tapPoint, options: nil).first else { return }
             node = hit.node
-            
             if (node.name?.range(of:"sand") != nil)
             {
-                if (node.parent!.parent! is VirtualObject)
-                {
-                    lastTime = NSDate.timeIntervalSinceReferenceDate
-                    lastTranslate = translate;
-                    prevTime = lastTime;
-                    prevTranslate = lastTranslate;
-
-                }
+                let activate = node.parent!.parent! as! VirtualObject
+                activate.isPlaced=true
             }
         }
         if (sender.state == UIGestureRecognizerState.changed)
         {
-            prevTime = lastTime
-            prevTranslate = lastTranslate
-            lastTime = NSDate.timeIntervalSinceReferenceDate
-            lastTranslate = translate
-            
+            print("gesture changed...\n")
+
         }
         if (sender.state == UIGestureRecognizerState.ended)
         {
-            var swipeVelocity:CGPoint  = CGPoint(x:0.0, y:0.0)
-
-            let seconds:TimeInterval = NSDate.timeIntervalSinceReferenceDate - prevTime;
-            if (seconds>0.0)
+            if(activeSandwich[0].isPlaced)
             {
-                swipeVelocity = CGPoint(x:Double((translate.x - prevTranslate.x))/seconds, y:Double((translate.y - prevTranslate.y))/seconds)
+                let velocity = sender.velocity(in: sceneView)
+                print(" velocity is  \(velocity)")
+                let _dir = calculateCameraDirection(cameraNode:sceneView.pointOfView!)
+                print("camera direction \(_dir)")
+                
+                //__ get the cross product of the cam forward direction and the global y axis to get the x vector
+                var _crossx = SCNVector3CrossProduct( left: _dir, right: SCNVector3Make(0, 1, 0) )
+                var _crossy = SCNVector3CrossProduct( left: _dir, right: _crossx )
+
+
+
+                //__multiply the y vector with swipe velocity y to get the correct world y velocity
+                let xforce  = Float(velocity.x * 0.001) * _crossx.normalize().x
+                let yforce  = Float(velocity.y * -0.001) * _crossy.normalize().y
+                let zforce  = Float(velocity.y * -0.001)
+                
+                
+                 activeSandwich[0].isPlaced=false
+                 activeSandwich[0].setUpPhysics()
+                 activeSandwich[0].physicsBody?.applyTorque(SCNVector4Make(0.5,0,0,0.5), asImpulse: true)
+                 let toss_vector = SCNVector3Make(xforce ,yforce ,zforce)
+                 print("\(toss_vector)")
+                 //activeSandwich[0].physicsBody?.applyForce(SCNVector3Make(xforce * _dir.x ,yforce * _dir.y ,zforce * _dir.z), asImpulse: true)
+                 activeSandwich[0].physicsBody?.applyForce(SCNVector3Make(toss_vector.x ,toss_vector.y , toss_vector.z), asImpulse: true)
+                
+                
             }
-            
-            let direction = CGPoint(x:Double((translate.x - prevTranslate.x)), y:Double((translate.y - prevTranslate.y)))
-            
-            let magnitude = sqrt((swipeVelocity.x * swipeVelocity.x) + (swipeVelocity.y * swipeVelocity.y))
-
-            let inertiaSeconds = 2.0;  // let's calculate where that flick would take us this far in the future
-            let final:CGPoint = CGPoint(x:Double(translate.x + swipeVelocity.x) * inertiaSeconds,
-                                        y:Double(translate.y + swipeVelocity.y) * inertiaSeconds)
-            
-            
-            print("swipe velocity is  \(swipeVelocity)")
-            print("magnitude of swipeVelocity is \(magnitude)")
-            print("we end up at this point \(final)")
-            print("direction \(direction)")
-            /*
-            var vo:VirtualObject = VirtualObject()
-            vo = node.parent!.parent! as! VirtualObject
-            vo.setUpPhysics()
-
-            vo.physicsBody?.applyTorque(SCNVector4Make(1,0,0,Float(velocity.y/10000)),asImpulse: true)
-            let finalvec = SCNVector3Make(Float(direction.x * swipeVelocity.x),
-                                          Float(abs(direction.y) * swipeVelocity.y),
-                                          -1.0)
-            
-            
-            
-             vo.physicsBody?.applyForce(SCNVector3Make(finalvec.x,
-                                                       finalvec.y,
-                                                       finalvec.z * 125),
-                                                       asImpulse: true)
-            */
-            
+            else{print("Warning. VirtualObject not placed.")}
         }
     }
     
+
+
+
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor)
     {
         //____to detect planes
         guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
         //____Create a SceneKit plane to visualize the node using its position and extent.
-        let plane = SCNBox(width: CGFloat(planeAnchor.extent.x * 2), height: 0.005, length: CGFloat(planeAnchor.extent.z * 2), chamferRadius: 0)
+        //let plane = SCNBox(width: CGFloat(planeAnchor.extent.x), height: 0.05, length: CGFloat(planeAnchor.extent.z), chamferRadius: 0)
+        let plane = SCNBox(width: 1000, height: 0.005, length: 1000, chamferRadius: 0)
         let planeNode = VirtualObject(name:"Floor")
-        planeNode.createPlaneWith(geo: plane, node:node)
+        planeNode.createPlaneWith(geo: plane)
         planeNode.position = SCNVector3Make(planeAnchor.center.x, -0.005, planeAnchor.center.z)
         //planeNode.transform = SCNMatrix4MakeRotation(-Float.pi / 2, 1, 0, 0)
         node.addChildNode(planeNode)
@@ -341,14 +337,19 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
         {
             if contact.nodeA.physicsBody!.categoryBitMask == CollisionTypes.bottom.rawValue
             {
-                print("Removing node B \(contact.nodeB.name!)")
-                contact.nodeB.removeFromParentNode()
-                self.loadModel()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute:
+                {
+                    if(self.activeSandwich.count>0)
+                    {
+                        self.activeSandwich[0].unLoadModel()
+                        self.activeSandwich.remove(at: 0)
+                        self.loadModel()
+                    }
+                })
 
             }
             else
             {
-                print("Removing node A \(contact.nodeA.name!)")
                 contact.nodeA.removeFromParentNode()
             }
         }
@@ -422,11 +423,14 @@ class ViewController: UIViewController, ARSCNViewDelegate, SCNPhysicsContactDele
         let result = SCNVector3Make(x, y, z)
         return result
     }
+    
+    /**
+     * Calculates the cross product between two SCNVector3 vectors
+     */
+    func SCNVector3CrossProduct(left: SCNVector3, right: SCNVector3) -> SCNVector3 {
+        return SCNVector3Make(left.y * right.z - left.z * right.y, left.z * right.x - left.x * right.z, left.x * right.y - left.y * right.x)
+    }
 
 }
 
-//__ Uses this function as shorthand to add 2 Vectors together
-func +(left: SCNVector3, right: SCNVector3) -> SCNVector3
-{
-    return SCNVector3Make(left.x + right.x, left.y + right.y, left.z + right.z)
-}
+

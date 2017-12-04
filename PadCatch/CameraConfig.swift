@@ -26,8 +26,6 @@ class CameraConfig
         //print("cameraNode position - \(cameraNode.position)")
         //print("cameraNode orientation - \(cameraNode.orientation)")
         //print("actual camera orientation - \(sceneView.pointOfView?.orientation)")
-        
-
     }
     
     func configureDisplay(sceneView: ARSCNView)

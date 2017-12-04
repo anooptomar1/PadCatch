@@ -16,6 +16,7 @@
 		97BE93081F8E51D000CDB015 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97BE93061F8E51D000CDB015 /* LaunchScreen.storyboard */; };
 		97C70F261F97183F00CEE540 /* CameraConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C70F251F97183F00CEE540 /* CameraConfig.swift */; };
 		97C70F281F9EC6B400CEE540 /* VirtualObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C70F271F9EC6B400CEE540 /* VirtualObject.swift */; };
+		97CEA4E81FD1158700EEBDD5 /* SCNVector3Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CEA4E71FD1158700EEBDD5 /* SCNVector3Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		97BE93131F96F4D000CDB015 /* Model */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Model; sourceTree = "<group>"; };
 		97C70F251F97183F00CEE540 /* CameraConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraConfig.swift; sourceTree = "<group>"; };
 		97C70F271F9EC6B400CEE540 /* VirtualObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VirtualObject.swift; path = PadCatch/Model/VirtualObject.swift; sourceTree = "<group>"; };
+		97CEA4E71FD1158700EEBDD5 /* SCNVector3Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SCNVector3Extensions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +50,7 @@
 		97BE92EE1F8E51D000CDB015 = {
 			isa = PBXGroup;
 			children = (
+				97CEA4E71FD1158700EEBDD5 /* SCNVector3Extensions.swift */,
 				9783F5651FA0695000BDA068 /* art.scnassets */,
 				97C70F271F9EC6B400CEE540 /* VirtualObject.swift */,
 				97BE92F91F8E51D000CDB015 /* PadCatch */,
@@ -156,6 +159,7 @@
 				97C70F281F9EC6B400CEE540 /* VirtualObject.swift in Sources */,
 				97C70F261F97183F00CEE540 /* CameraConfig.swift in Sources */,
 				97BE92FD1F8E51D000CDB015 /* ViewController.swift in Sources */,
+				97CEA4E81FD1158700EEBDD5 /* SCNVector3Extensions.swift in Sources */,
 				97BE92FB1F8E51D000CDB015 /* AppDelegate.swift in Sources */,
 				97BE93031F8E51D000CDB015 /* PadCatch.xcdatamodeld in Sources */,
 			);
